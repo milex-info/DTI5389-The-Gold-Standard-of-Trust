@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """
-Orchestrator script that runs the three data-processing steps in order:
+Orchestrator script that runs the four data-processing steps in order:
 
   1. merge.py              -- Merge raw Reddit scraper CSVs into a single
                               deduplicated file (processed_data/merged_reddit_data.csv).
-  2. generate_sellerlist.py -- Fetch seller flair/reputation scores from Reddit
+  2. extract_features.py   -- Use Google Gemini to extract payment_method,
+                              transaction_value, and item_type from post text.
+  3. generate_sellerlist.py -- Fetch seller flair/reputation scores from Reddit
                               and write processed_data/seller_list.csv.
-  3. market_graph.py       -- Infer buyer-seller transactions and produce
+  4. market_graph.py       -- Infer buyer-seller transactions and produce
                               processed_data/transactions.csv plus network
                               visualisations in visualizations/.
 
 Usage:
-    python process_data.py                     # run all three steps
+    python process_data.py                     # run all four steps
     python process_data.py --skip-flair        # skip the slow Reddit API scrape
+    python process_data.py --skip-extract      # skip the Gemini feature extraction
     python process_data.py --top-sellers 5     # also generate top-N seller output
 """
 
@@ -48,23 +51,33 @@ def main():
         help="Skip generate_sellerlist.py (the Reddit API flair scrape is slow)",
     )
     ap.add_argument(
+        "--skip-extract", action="store_true",
+        help="Skip extract_features.py (the Gemini feature extraction)",
+    )
+    ap.add_argument(
         "--top-sellers", type=int, default=5, metavar="N",
         help="Pass --top-sellers N to market_graph.py (default: 5)",
     )
     args = ap.parse_args()
 
     # Step 1: Merge raw CSVs
-    run_step("Step 1/3: Merging raw Reddit scraper CSVs", "merge.py")
+    run_step("Step 1/4: Merging raw Reddit scraper CSVs", "merge.py")
 
-    # Step 2: Scrape seller flair from Reddit
+    # Step 2: Extract transaction features using Gemini
+    if args.skip_extract:
+        print("\n-- Skipping extract_features.py (--skip-extract) --")
+    else:
+        run_step("Step 2/4: Extracting transaction features (Gemini)", "extract_features.py")
+
+    # Step 3: Scrape seller flair from Reddit
     if args.skip_flair:
         print("\n-- Skipping generate_sellerlist.py (--skip-flair) --")
     else:
-        run_step("Step 2/3: Fetching seller flair from Reddit", "generate_sellerlist.py")
+        run_step("Step 3/4: Fetching seller flair from Reddit", "generate_sellerlist.py")
 
-    # Step 3: Infer transactions and build network graph
+    # Step 4: Infer transactions and build network graph
     graph_args = ["--top-sellers", str(args.top_sellers)]
-    run_step("Step 3/3: Inferring transactions and building network graph", "market_graph.py", graph_args)
+    run_step("Step 4/4: Inferring transactions and building network graph", "market_graph.py", graph_args)
 
     print(f"\n{'=' * 60}")
     print("  Pipeline complete.")
