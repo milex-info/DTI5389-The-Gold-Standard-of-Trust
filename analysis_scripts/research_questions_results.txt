@@ -1,34 +1,34 @@
 Research Questions Analysis Results
-Generated on: 2026-03-08 20:23:10
+Generated on: 2026-03-13 16:37:18
 
 Step 5: RQ1 Analysis - Power Users...
-Power User Classification AUC: 0.5481
-  User GregHutch1964: Cluster 3, Distance from centroid: 2.1675
-  User rooneyskywalker: Cluster 3, Distance from centroid: 1.9150
-  User xxSpeedysxx: Cluster 3, Distance from centroid: 2.0955
+Power User Classification AUC: 0.4548
+  User GregHutch1964: Cluster 2, Distance from centroid: 2.1739
+  User rooneyskywalker: Cluster 0, Distance from centroid: 1.8891
+  User xxSpeedysxx: Cluster 3, Distance from centroid: 2.0959
 Step 6: RQ2 Analysis - Reputation & Trading Outcomes...
-Volume Regression R^2 - Baseline (Flair only): 0.0984
-Volume Regression R^2 - Embeddings: 0.0815
-Correlation between user similarity and transaction value/premium: -0.0093
+Volume Regression R^2 - Baseline (Flair only): 0.1536
+Volume Regression R^2 - Embeddings: 0.0603
+Correlation between user similarity and transaction value/premium: -0.0099
 Step 7: RQ3 Analysis - Fraud & Anomalies...
-Detected 56 anomalous nodes based on network structure.
+Detected 65 anomalous nodes based on network structure.
 Top 10 anomalous nodes (highest reconstruction error):
-  - Adventurous-End5580 (Recon Error: 0.4735)
-  - stillwaters23 (Recon Error: 0.4750)
-  - Objective_Cry_4818 (Recon Error: 0.4778)
-  - grants1692 (Recon Error: 0.4860)
-  - Impressive_Sir_3886 (Recon Error: 0.4889)
-  - zenpathfinder (Recon Error: 0.4961)
-  - stackinggold (Recon Error: 0.5036)
-  - rooneyskywalker (Recon Error: 0.5116)
-  - xxSpeedysxx (Recon Error: 0.5186)
-  - Objective-Cap-7697 (Recon Error: 0.5469)
+  - SilverGram90 (Recon Error: 0.4450)
+  - Ordinary-Nature-8704 (Recon Error: 0.4491)
+  - Impressive_Sir_3886 (Recon Error: 0.4495)
+  - Klutzy_Turnip_3011 (Recon Error: 0.4639)
+  - stackinggold (Recon Error: 0.4682)
+  - xxSpeedysxx (Recon Error: 0.4869)
+  - FuzzyDunlopSeeEye (Recon Error: 0.4924)
+  - zenpathfinder (Recon Error: 0.4968)
+  - rooneyskywalker (Recon Error: 0.4985)
+  - Objective-Cap-7697 (Recon Error: 0.5158)
 Calculating approximate betweenness centrality for middleman identification...
 Potential middlemen (Top Betweenness Centrality):
-  - Objective-Cap-7697: 0.0097
-  - OminiousMetal7443: 0.0045
-  - YouGetWhatYouPayFour: 0.0041
-  - stillwaters23: 0.0037
-  - Strange_grass23: 0.0035
+  - Strange_grass23: 0.0257
+  - Objective-Cap-7697: 0.0190
+  - Adventurous-End5580: 0.0173
+  - a3quit4s_: 0.0155
+  - rooneyskywalker: 0.0114
 
 Analysis complete! Results generated and visualizations saved.

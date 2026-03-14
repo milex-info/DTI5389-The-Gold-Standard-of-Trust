@@ -37,6 +37,17 @@ import networkx as nx
 import matplotlib
 matplotlib.use("Agg")  # non-interactive backend – works without a display
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+
+# ── Graph palette ───────────────────────────────────────────────────────────
+_BG      = "#16161D"
+_GOLD    = "#FDE4A3"
+_WHITE50 = "#FFFFFF"  # used with alpha=0.5 where needed
+
+# Try to use IBM Plex Sans; fall back to a generic sans-serif.
+_LABEL_FONT = "IBM Plex Sans"
+if not any(_LABEL_FONT.lower() in f.name.lower() for f in fm.fontManager.ttflist):
+    _LABEL_FONT = "sans-serif"
 
 
 # ── Defaults ────────────────────────────────────────────────────────────────
@@ -383,35 +394,58 @@ def main() -> None:
     # ── 8. Draw ─────────────────────────────────────────────────────────────
     pos = nx.spring_layout(G, seed=42, k=1.8)
     deg = dict(G.degree())
-    node_sizes = [300 + 120 * deg[n] for n in G.nodes()]
+
+    # Identify seller vs buyer nodes
+    seller_set = {t["seller"] for t in transactions}
+    seller_nodes = [n for n in G.nodes() if n in seller_set]
+    buyer_nodes  = [n for n in G.nodes() if n not in seller_set]
+
+    seller_sizes = [300 + 120 * deg[n] for n in seller_nodes]
+    buyer_sizes  = [300 + 120 * deg[n] for n in buyer_nodes]
+
     edge_widths = [0.5 + 0.7 * G[u][v]["weight"] for u, v in G.edges()]
 
     fig, ax = plt.subplots(figsize=(12, 8))
+    fig.patch.set_facecolor(_BG)
+    ax.set_facecolor(_BG)
+
+    # Seller nodes: hollow with #FDE4A3 2px stroke
     nx.draw_networkx_nodes(
-        G, pos, ax=ax,
-        node_size=node_sizes, node_color="#8fbbe8", alpha=0.9,
-        edgecolors="#3a6ea5", linewidths=0.6,
+        G, pos, nodelist=seller_nodes, ax=ax,
+        node_size=seller_sizes, node_color=_BG, alpha=1.0,
+        edgecolors=_GOLD, linewidths=2,
     )
+    # Buyer nodes: white at 50% opacity
+    nx.draw_networkx_nodes(
+        G, pos, nodelist=buyer_nodes, ax=ax,
+        node_size=buyer_sizes, node_color=_WHITE50, alpha=0.5,
+        edgecolors="none", linewidths=0,
+    )
+
+    # Edges: white at 50% opacity, no labels
     nx.draw_networkx_edges(
         G, pos, ax=ax,
-        width=edge_widths, edge_color="#555555",
-        arrows=True, arrowsize=14, alpha=0.7,
+        width=edge_widths, edge_color=_WHITE50,
+        arrows=True, arrowsize=14, alpha=0.5,
         connectionstyle="arc3,rad=0.1",
     )
-    nx.draw_networkx_labels(G, pos, ax=ax, font_size=7, font_weight="bold")
 
-    # edge labels: transaction count
-    edge_labels = {(u, v): str(d["count"]) for u, v, d in G.edges(data=True)}
-    nx.draw_networkx_edge_labels(
-        G, pos, edge_labels=edge_labels, ax=ax,
-        font_size=6, font_color="#aa0000",
+    # Only seller labels: IBM Plex Sans Regular, #FDE4A3
+    seller_labels = {nd: nd for nd in seller_nodes}
+    nx.draw_networkx_labels(
+        G, pos, labels=seller_labels, ax=ax,
+        font_size=7, font_weight="normal",
+        font_color=_GOLD, font_family=_LABEL_FONT,
     )
 
-    ax.set_title("Buyer-Seller Transaction Network  (r/Pmsforsale)", fontsize=13)
     ax.axis("off")
     fig.tight_layout()
-    fig.savefig(os.path.join(PROJECT_ROOT, 'visualizations', args.image), dpi=150)
-    print(f"  Network visualisation -> {args.image}")
+    fig.savefig(os.path.join(PROJECT_ROOT, 'visualizations', args.image),
+                dpi=150, facecolor=_BG)
+    svg_name = _split_ext(args.image)[0] + ".svg"
+    fig.savefig(os.path.join(PROJECT_ROOT, 'visualizations', svg_name),
+                facecolor=_BG)
+    print(f"  Network visualisation -> {args.image}, {svg_name}")
     print(f"  Nodes: {G.number_of_nodes()}  Edges: {G.number_of_edges()}")
 
     # ── 9. Top-sellers mode ─────────────────────────────────────────────────
@@ -472,65 +506,58 @@ def _top_sellers(
     pos = nx.spring_layout(G, seed=42, k=2.2)
     deg = dict(G.degree())
 
-    # Colour sellers differently from buyers
-    node_colors = [
-        "#f4a261" if nd in top_set else "#8fbbe8"
-        for nd in G.nodes()
-    ]
-    node_sizes = [
-        600 + 160 * deg[nd] if nd in top_set else 250 + 80 * deg[nd]
-        for nd in G.nodes()
-    ]
+    seller_nodes = [nd for nd in G.nodes() if nd in top_set]
+    buyer_nodes  = [nd for nd in G.nodes() if nd not in top_set]
+
+    seller_sizes = [600 + 160 * deg[nd] for nd in seller_nodes]
+    buyer_sizes  = [250 + 80 * deg[nd] for nd in buyer_nodes]
+
     edge_widths = [0.6 + 0.8 * G[u][v]["weight"] for u, v in G.edges()]
 
     fig, ax = plt.subplots(figsize=(16, 11))
+    fig.patch.set_facecolor(_BG)
+    ax.set_facecolor(_BG)
+
+    # Seller nodes: hollow with #FDE4A3 2px stroke
     nx.draw_networkx_nodes(
-        G, pos, ax=ax,
-        node_size=node_sizes, node_color=node_colors, alpha=0.92,
-        edgecolors="#3a3a3a", linewidths=0.7,
+        G, pos, nodelist=seller_nodes, ax=ax,
+        node_size=seller_sizes, node_color=_BG, alpha=1.0,
+        edgecolors=_GOLD, linewidths=2,
     )
+    # Buyer nodes: white at 50% opacity
+    nx.draw_networkx_nodes(
+        G, pos, nodelist=buyer_nodes, ax=ax,
+        node_size=buyer_sizes, node_color=_WHITE50, alpha=0.5,
+        edgecolors="none", linewidths=0,
+    )
+
+    # Edges: white at 50% opacity, no labels
     nx.draw_networkx_edges(
         G, pos, ax=ax,
-        width=edge_widths, edge_color="#666666",
-        arrows=True, arrowsize=14, alpha=0.65,
+        width=edge_widths, edge_color=_WHITE50,
+        arrows=True, arrowsize=14, alpha=0.5,
         connectionstyle="arc3,rad=0.12",
     )
 
-    # Label sellers at normal size, buyers slightly smaller
-    seller_labels = {nd: nd for nd in G.nodes() if nd in top_set}
-    buyer_labels  = {nd: nd for nd in G.nodes() if nd not in top_set}
-    nx.draw_networkx_labels(G, pos, labels=seller_labels, ax=ax,
-                            font_size=9, font_weight="bold")
-    nx.draw_networkx_labels(G, pos, labels=buyer_labels, ax=ax,
-                            font_size=6, font_weight="normal")
-
-    edge_labels = {(u, v): str(d["count"]) for u, v, d in G.edges(data=True)}
-    nx.draw_networkx_edge_labels(
-        G, pos, edge_labels=edge_labels, ax=ax,
-        font_size=6, font_color="#aa0000",
+    # Only seller labels: IBM Plex Sans Regular, #FDE4A3
+    seller_labels = {nd: nd for nd in seller_nodes}
+    nx.draw_networkx_labels(
+        G, pos, labels=seller_labels, ax=ax,
+        font_size=9, font_weight="normal",
+        font_color=_GOLD, font_family=_LABEL_FONT,
     )
 
-    ax.set_title(
-        f"Top {n} Sellers & Their Buyers  (r/Pmsforsale)",
-        fontsize=14,
-    )
     ax.axis("off")
-
-    # Legend
-    from matplotlib.lines import Line2D
-    legend_elements = [
-        Line2D([0], [0], marker="o", color="w", label="Seller (top)",
-               markerfacecolor="#f4a261", markersize=12),
-        Line2D([0], [0], marker="o", color="w", label="Buyer",
-               markerfacecolor="#8fbbe8", markersize=10),
-    ]
-    ax.legend(handles=legend_elements, loc="upper left", fontsize=10)
 
     fig.tight_layout()
     stem_i, ext_i = _split_ext(base_image)
     img_path = f"{stem_i}_top{n}{ext_i}"
-    fig.savefig(os.path.join(PROJECT_ROOT, 'visualizations', img_path), dpi=150)
-    print(f"  Network visualisation -> {img_path}")
+    fig.savefig(os.path.join(PROJECT_ROOT, 'visualizations', img_path),
+                dpi=150, facecolor=_BG)
+    svg_path = _split_ext(img_path)[0] + ".svg"
+    fig.savefig(os.path.join(PROJECT_ROOT, 'visualizations', svg_path),
+                facecolor=_BG)
+    print(f"  Network visualisation -> {img_path}, {svg_path}")
     print(f"  Nodes: {G.number_of_nodes()}  Edges: {G.number_of_edges()}")
 
 
