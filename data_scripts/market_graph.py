@@ -27,7 +27,9 @@ SOLD-POST FALLBACK
 from __future__ import annotations
 
 import argparse
+import math
 import os
+import random
 import re
 import sys
 from typing import Dict, List, Optional, Tuple
@@ -502,12 +504,52 @@ def _top_sellers(
     for pair, w in weights.items():
         G.add_edge(pair[0], pair[1], weight=w, count=counts[pair])
 
-    # ── Draw ────────────────────────────────────────────────────────────────
-    pos = nx.spring_layout(G, seed=42, k=2.2)
-    deg = dict(G.degree())
+    # ── Clustered layout: buyers orbit their primary seller ──────────────
+    rng = random.Random(42)
 
     seller_nodes = [nd for nd in G.nodes() if nd in top_set]
     buyer_nodes  = [nd for nd in G.nodes() if nd not in top_set]
+
+    # 1. Place sellers evenly on a large circle
+    seller_pos: Dict[str, Tuple[float, float]] = {}
+    n_sellers = len(seller_nodes)
+    for i, s in enumerate(seller_nodes):
+        angle = 2 * math.pi * i / n_sellers
+        seller_pos[s] = (math.cos(angle), math.sin(angle))
+
+    # 2. Map each buyer to their primary seller (most transactions)
+    primary_seller: Dict[str, str] = {}
+    for buyer in buyer_nodes:
+        best_seller, best_count = seller_nodes[0], 0
+        for seller in seller_nodes:
+            if G.has_edge(seller, buyer):
+                c = G[seller][buyer]["count"]
+                if c > best_count:
+                    best_count = c
+                    best_seller = seller
+        primary_seller[buyer] = best_seller
+
+    # 3. Group buyers by primary seller
+    clusters: Dict[str, List[str]] = {s: [] for s in seller_nodes}
+    for buyer, seller in primary_seller.items():
+        clusters[seller].append(buyer)
+
+    # 4. Position buyers in a ring around their primary seller
+    pos: Dict[str, Tuple[float, float]] = {}
+    pos.update(seller_pos)
+    orbit_radius = 0.35
+    for seller, buyers in clusters.items():
+        sx, sy = seller_pos[seller]
+        n_buyers = len(buyers)
+        for j, buyer in enumerate(buyers):
+            angle = 2 * math.pi * j / max(n_buyers, 1)
+            jitter_r = rng.uniform(-0.04, 0.04)
+            jitter_a = rng.uniform(-0.15, 0.15)
+            r = orbit_radius + jitter_r
+            a = angle + jitter_a
+            pos[buyer] = (sx + r * math.cos(a), sy + r * math.sin(a))
+
+    deg = dict(G.degree())
 
     seller_sizes = [600 + 160 * deg[nd] for nd in seller_nodes]
     buyer_sizes  = [250 + 80 * deg[nd] for nd in buyer_nodes]
